@@ -1,0 +1,286 @@
+package p1n;
+import javax.swing.*;
+
+public class jav {
+
+	public static void main(String[] args) {
+		JFrame obj=new JFrame(); //createing a jframe
+		Gameplay gamePlay=new Gameplay(); //object of gameplay
+		obj.setBounds(10,10,700,600); //size of jframe
+		obj.setTitle("Breakout Ball");  //title of jframe
+		obj.setResizable(false); //resizeable or not
+		obj.setVisible(true);  //visible
+		obj.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  //close
+		obj.add(gamePlay);  //adding panel in frame
+		
+
+	}
+
+}
+
+
+
+
+package p1n;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+import java.awt.event.*;
+//import java.util.Timer;
+import javax.swing.Timer;
+import java.awt.Graphics2D;
+
+import javax.swing.JPanel;
+//class gameplay creation
+public class Gameplay extends JPanel implements KeyListener,ActionListener{
+	private boolean play=false;
+	private int score=0;  //initial score is 0
+	private int totalbricks=21;  //total bricks 
+	private Timer timer;  //timer for the ball to move
+	private int delay=8;  //delay
+	private int playerX=310;  //starting position of slider
+	private int ballposx=120;  //starting position of ball
+	private int ballposy=350;
+	private int ballXdir=-1;  //direction of ball
+	private int ballYdir=-2;
+	private map m;  //map of bricks
+	
+	public Gameplay()
+	{
+		m=new map(3,7);  //arrangement of bricks
+		addKeyListener(this);  
+		setFocusable(true);
+		setFocusTraversalKeysEnabled(false);
+		timer=new Timer(delay,this);  //timer object
+		timer.start();  //timer start
+	}
+	
+	public void paint(Graphics g)
+	{  //background
+		g.setColor(Color.black);  //background color
+
+		g.fillRect(1, 1, 692, 592);  //rectangle background
+		
+		m.draw((Graphics2D)g);
+
+              //borders
+		g.setColor(Color.yellow);  
+		g.fillRect(0, 0, 692, 3);
+		g.fillRect(691, 0, 3, 592);
+		g.setColor(Color.white);
+		g.setFont(new Font("serif",Font.BOLD,25));
+		g.drawString(""+score, 590, 30);
+
+           //paddle
+		g.setColor(Color.green);  
+		g.fillRect(playerX, 550, 100, 8);  
+	//ball	
+		g.setColor(Color.yellow);
+		g.fillOval(ballposx, ballposy, 20, 20);
+		
+		if(totalbricks<=0)
+		{
+			play=false;
+			ballXdir=0;
+			ballYdir=0;
+			g.setColor(Color.orange);
+			g.setFont(new Font("serif",Font.BOLD,30));
+		    g.drawString("YOU WIN!",260,300);
+		    g.setFont(new Font("serif",Font.BOLD,20));
+		    g.drawString("Press ENTER to restart.",230,350);
+		}
+		
+		if(ballposy>570)
+		{
+			play=false;
+			ballXdir=0;
+			ballYdir=0;
+			g.setColor(Color.orange);
+			g.setFont(new Font("serif",Font.BOLD,30));
+		    g.drawString("GAME OVER,SCORES:"+score,190,300);
+		    g.setFont(new Font("serif",Font.BOLD,20));
+		    g.drawString("Press ENTER to restart.",230,350);
+		}
+		
+		g.dispose();
+		
+	}
+
+	@Override  //action performed is for the moments if the ball.
+	public void actionPerformed(ActionEvent e) {
+		timer.start();
+		if(play)
+		{
+			if(new Rectangle(ballposx,ballposy,20,20).intersects(new Rectangle(playerX,550,100,8)))
+			{
+				ballYdir=-ballYdir;
+			}
+			A:for(int i=0;i<m.Map.length;i++)
+			{
+				for(int j=0;j<m.Map[0].length;j++)
+				{
+					if(m.Map[i][j]>0)
+					{
+					 int brickx=j* m.brickwidth+80;
+					 int bricky=i* m.brickheight+50;
+					 int brickwidth=m.brickwidth;
+					 int brickheight=m.brickheight;
+
+//creating a rectangle around ball to detect intersection with the slider.					 
+					 Rectangle rect=new Rectangle(brickx,bricky,brickwidth,brickheight);
+					 Rectangle ballrect=new Rectangle(ballposx,ballposy,20,20);
+					 Rectangle brickrect=rect;
+	//intersection of ball with slider				 
+					 if(ballrect.intersects(brickrect))
+					 {
+						 m.setbrickvalue(0, i, j);
+						 totalbricks--;
+						 score+=5;
+						            if(ballposx+19<=brickrect.x||
+ballposx+1>=brickrect.x+brickrect.width)
+						 {
+							 ballXdir=-ballXdir;
+							 
+						 }
+						 else
+						 {
+							 ballYdir=-ballYdir;
+						 }
+						 break A;
+					 }
+					 
+					}
+				}
+					
+			}
+			ballposx +=ballXdir;
+			ballposy +=ballYdir;
+			if(ballposx<0)     // balldirection for the left border
+				ballXdir=-ballXdir;
+			if(ballposy<0)          // balldirection for the top
+				ballYdir=-ballYdir;
+			if(ballposx>670)  //right ball position should be greater than 670
+				ballXdir=-ballXdir;
+		}
+		
+		
+		repaint();  //repaint is to recall the paint function.
+		
+	}
+//key pressed is used to determine which side the slider has to be moved depending on the arrow keys.
+	@Override
+	public void keyPressed(KeyEvent e) {
+		if(e.getKeyCode()==KeyEvent.VK_RIGHT)
+		{
+			if(playerX>=600) 
+ //to check so that slider doesn’t go outside the panal
+			{
+				playerX=600;
+			}
+			else
+			{
+				moveRight();
+			}
+		}  
+		if(e.getKeyCode()==KeyEvent.VK_LEFT)
+ //to check so that slider doesn’t go outside the panal
+		{
+			if(playerX<10)
+			{
+				playerX=10;
+			}
+			else
+			{
+				moveLeft();
+			}
+		}
+		if(e.getKeyCode()==KeyEvent.VK_ENTER)
+		{
+			if(!play)
+			{
+				play=true;
+				ballposx=120;
+				ballposy=350;
+				ballXdir=-1;
+				ballYdir=-2;
+				playerX=310;
+				score=0;
+				totalbricks=21;
+				m=new map(3,7);
+				repaint();
+			}
+		}
+		
+		
+	}
+	public void moveRight()
+	{
+		play=true;
+		playerX+=20;
+	}
+	public void moveLeft()
+	{
+		play=true;
+		playerX-=20;
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		
+	}
+	
+
+}
+
+//mapgenerator class
+package p1n;
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;  //2d array 
+//map is the arrangement of bricks in a matrix format.
+public class map {
+	public int Map[][];  //map in matrix form with row and column value
+	public int brickheight;
+	public int brickwidth;
+	public map(int row,int col)
+	{
+		Map=new int[row][col];  
+		for(int i=0;i<Map.length;i++)
+		{
+			for(int j=0;j<Map[0].length;j++) {
+				Map[i][j]=1;  //1 will detect that the brick is not intersected with ball shows the brick on the panel
+			}
+		}
+		brickwidth=540/col;  //brickwidth
+		brickheight=150/row;  //brickheight
+		
+	}
+	public void draw(Graphics2D g)   //to draw the brick wherever thers a value of 1
+	{
+		for(int i=0;i<Map.length;i++)
+		{
+			for(int j=0;j<Map[0].length;j++) {
+				if(Map[i][j]>0)
+				{
+					g.setColor(Color.white);  //gives brick color
+					g.fillRect(j*brickwidth+80, i*brickheight+50, brickwidth, brickheight); //draw rectangle and fill
+					g.setStroke(new BasicStroke(3));  //to create a map with border
+					g.setColor(Color.black);  //color of border
+					g.drawRect(j*brickwidth+80, i*brickheight+50, brickwidth, brickheight);
+				}
+			}
+		}
+	}
+	public void setbrickvalue(int value,int row,int col)
+// function for intersection of ball and brick,here the value of brick changes.
+	{
+		Map[row][col]=value;
+	}}
